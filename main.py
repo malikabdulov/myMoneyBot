@@ -132,7 +132,7 @@ def new_expense(message, expense):
     except Exception as e:
         print('With sql.insert_new_expense(expense):', e)
     chat_id = message.chat.id
-    text = 'Got it!'
+    text = 'Спасибо, новый расход сохранен!'
     bot.send_message(chat_id=chat_id, text=text)
 
 
