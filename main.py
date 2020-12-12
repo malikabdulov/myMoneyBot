@@ -12,7 +12,7 @@ bot = telebot.TeleBot(token=config.potatobot['token'], parse_mode='Markdown')
 @bot.message_handler(commands=['start'])
 def start_message(message):
     first_name = message.from_user.first_name
-    text = f'Привет, *{first_name}*!\nДобро пожаловать! Я бот-помошник!\n\n\n_Используй команду /help_'
+    text = f'Привет, *{first_name}*!\nДобро пожаловать! Я бот-помошник!\n\n_Используй команду /help_'
     chat_id = message.chat.id
     bot.send_message(chat_id=chat_id, text=text)
     sql.update_users(message=message)
@@ -20,8 +20,8 @@ def start_message(message):
 
 @bot.message_handler(commands=['help'])
 def start_message(message):
-    key_new_expense = InlineKeyboardButton(text='New expense', callback_data='newExpense')
-    key_last_expenses = InlineKeyboardButton(text='Last 5 expenses', callback_data='lastExpenses')
+    key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense')
+    key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
     markup_inline = InlineKeyboardMarkup()
     markup_inline.add(key_new_expense, key_last_expenses)
     text = f'You can use buttons bellow.'
@@ -51,14 +51,6 @@ def get_notes(message):
                      )
 
 
-@bot.message_handler(commands=['newnote'])
-def add_new_note(message):
-    msg = bot.send_message(chat_id=message.chat.id,
-                           text='Please enter a title for the new note')
-    bot.register_next_step_handler(message=msg,
-                                   callback=tfunc.note_registration)
-
-
 @bot.callback_query_handler(func=lambda call: True)
 def answer_to_call(call):
     print('Callback:', call.data)
@@ -67,7 +59,7 @@ def answer_to_call(call):
     msg_id = call.message.id
     src_text = call.message.text
     if callback == 'newExpense':
-        text = 'Choose category:'
+        text = 'Выбери категорию:'
         categories = sql.get_categories()
         markup_inline = InlineKeyboardMarkup()
         keys = []
@@ -75,7 +67,7 @@ def answer_to_call(call):
             keys.append(InlineKeyboardButton(text=f'{Name}', callback_data=f'newExpense{ID}'))
         for i in range(0, len(keys) - 1, 2):
             markup_inline.add(keys[i], keys[i + 1])
-        markup_inline.add(InlineKeyboardButton(text='Back to help', callback_data='help'))
+        markup_inline.add(InlineKeyboardButton(text='Вернуться назад', callback_data='help'))
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
     elif callback == 'lastExpenses':
         text = ''
@@ -84,8 +76,8 @@ def answer_to_call(call):
             text += f'*{expense[2]}* _{expense[0]}_ - {expense[1]} - {expense[3]} тенге\n'
         bot.send_message(chat_id=chat_id, text=text)
     elif callback == 'help':
-        key_new_expense = InlineKeyboardButton(text='New expense', callback_data='newExpense', )
-        key_last_expenses = InlineKeyboardButton(text='Last expenses', callback_data='lastExpenses')
+        key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense', )
+        key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
         markup_inline = InlineKeyboardMarkup()
         markup_inline.add(key_new_expense, key_last_expenses)
 
