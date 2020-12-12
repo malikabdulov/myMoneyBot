@@ -53,8 +53,6 @@ def edit_title_name(message, callback, prev_message_id):
     markup_inline.add(key_edit_title, key_edit_content, key_delete_note)
     markup_inline.add(key_back_notes_list)
 
-
-
     bot.send_message(chat_id=message.chat.id,
                      text=f'What do you want to do with "*{note_title}*"?',
                      reply_markup=markup_inline,

@@ -1,9 +1,10 @@
 import telebot
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 import database as sql
 import config
-import re as regexp
+import re
 import functions_tg as tfunc
+from datetime import date, timedelta
 
 bot = telebot.TeleBot(token=config.potatobot['token'], parse_mode='Markdown')
 
@@ -20,10 +21,9 @@ def start_message(message):
 @bot.message_handler(commands=['help'])
 def start_message(message):
     key_new_expense = InlineKeyboardButton(text='New expense', callback_data='newExpense')
-    key_last_expenses = InlineKeyboardButton(text='Last expenses', callback_data='lastExpenses')
+    key_last_expenses = InlineKeyboardButton(text='Last 5 expenses', callback_data='lastExpenses')
     markup_inline = InlineKeyboardMarkup()
     markup_inline.add(key_new_expense, key_last_expenses)
-
     text = f'You can use buttons bellow.'
     chat_id = message.chat.id
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
@@ -73,21 +73,77 @@ def answer_to_call(call):
         keys = []
         for ID, Name in categories.items():
             keys.append(InlineKeyboardButton(text=f'{Name}', callback_data=f'newExpense{ID}'))
-        for i in range(0, len(keys)-1, 2):
-            markup_inline.add(keys[i], keys[i+1])
-        markup_inline.add(InlineKeyboardButton(text='Back to categories', callback_data='help'))
+        for i in range(0, len(keys) - 1, 2):
+            markup_inline.add(keys[i], keys[i + 1])
+        markup_inline.add(InlineKeyboardButton(text='Back to help', callback_data='help'))
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
     elif callback == 'lastExpenses':
-        pass
+        text = ''
+        expenses = sql.get_expenses(5)
+        for expense in expenses:  # tuple (name, comment, date, cost)
+            text += f'*{expense[2]}* _{expense[0]}_ - {expense[1]} - {expense[3]} тенге\n'
+        bot.send_message(chat_id=chat_id, text=text)
     elif callback == 'help':
-        key_new_expense = InlineKeyboardButton(text='New expense', callback_data='newExpense')
+        key_new_expense = InlineKeyboardButton(text='New expense', callback_data='newExpense', )
         key_last_expenses = InlineKeyboardButton(text='Last expenses', callback_data='lastExpenses')
         markup_inline = InlineKeyboardMarkup()
         markup_inline.add(key_new_expense, key_last_expenses)
 
         text = f'You can use buttons bellow.'
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
-    # Нужен новый elif с REGEXP
+    elif re.match(pattern='newExpense\d+', string=callback):
+        category_id = re.findall(pattern='\d+', string=callback)
+        telegram_id = call.from_user.id
+        expense = {'category_id': int(category_id[0]),
+                   'telegram_id': int(telegram_id)}
+
+        today = str(date.today())
+        yesterday = str(date.today() - timedelta(days=1))
+        two_days_ago = str(date.today() - timedelta(days=2))
+        three_days_ago = str(date.today() - timedelta(days=3))
+
+        key_today = InlineKeyboardButton(text=today)
+        key_yesterday = InlineKeyboardButton(text=yesterday)
+        key_two_days_ago = InlineKeyboardButton(text=two_days_ago)
+        key_three_days_ago = InlineKeyboardButton(text=three_days_ago)
+
+        markup_inline = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+        markup_inline.add(key_today, key_yesterday)
+        markup_inline.add(key_two_days_ago, key_three_days_ago)
+        text1 = 'Enter date of expense.'
+        text2 = 'Example: *2020-12-21*'
+        bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text1)
+        msg = bot.send_message(chat_id=chat_id, text=text2, reply_markup=markup_inline)
+        bot.register_next_step_handler(msg, get_expense_comment, expense)
+
+
+def get_expense_comment(message, expense):
+    expense['date'] = message.text
+    chat_id = message.chat.id
+    text = 'Enter comment'
+    msg = bot.send_message(chat_id=chat_id, text=text)
+    bot.register_next_step_handler(msg, get_expense_cost, expense)
+
+
+def get_expense_cost(message, expense):
+    expense['comment'] = message.text
+    chat_id = message.chat.id
+    text = 'Enter expense cost\n\n_Note: integer only_'
+    msg = bot.send_message(chat_id=chat_id, text=text)
+    bot.register_next_step_handler(msg, new_expense, expense)
+
+
+def new_expense(message, expense):
+    expense['cost'] = int(message.text)
+    try:
+        sql.insert_new_expense(expense)
+    except Exception as e:
+        print('With sql.insert_new_expense(expense):', e)
+    chat_id = message.chat.id
+    text = 'Got it!'
+    bot.send_message(chat_id=chat_id, text=text)
+
+
     # Old code
     # elif call.data == 'notes_list':
     #     markup_inline = types.InlineKeyboardMarkup()
