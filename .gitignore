@@ -839,3 +839,4 @@
 /venv/Lib/site-packages/six-1.15.0.dist-info/WHEEL
 /venv/Lib/site-packages/protobuf-3.14.0-nspkg.pth
 /venv/Lib/site-packages/six.py
+/config.py

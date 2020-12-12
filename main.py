@@ -12,7 +12,7 @@ bot = telebot.TeleBot(token=config.potatobot['token'], parse_mode='Markdown')
 @bot.message_handler(commands=['start'])
 def start_message(message):
     first_name = message.from_user.first_name
-    text = f'Hello *{first_name}*!\nWelcome to money bot!\nYou can use buttons bellow.\n\n_If you need help type /help_'
+    text = f'Привет, *{first_name}*!\nДобро пожаловать! Я бот-помошник!\n\n\n_Используй команду /help_'
     chat_id = message.chat.id
     bot.send_message(chat_id=chat_id, text=text)
     sql.update_users(message=message)
