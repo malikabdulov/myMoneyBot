@@ -102,8 +102,8 @@ def answer_to_call(call):
         markup_inline = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
         markup_inline.add(key_today, key_yesterday)
         markup_inline.add(key_two_days_ago, key_three_days_ago)
-        text1 = 'Enter date of expense.'
-        text2 = 'Example: *2020-12-21*'
+        text1 = 'Введи дату расхода.'
+        text2 = 'Пример: *2020-12-21*'
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text1)
         msg = bot.send_message(chat_id=chat_id, text=text2, reply_markup=markup_inline)
         bot.register_next_step_handler(msg, get_expense_comment, expense)
@@ -112,7 +112,7 @@ def answer_to_call(call):
 def get_expense_comment(message, expense):
     expense['date'] = message.text
     chat_id = message.chat.id
-    text = 'Enter comment'
+    text = 'Введи комментарий к расходу'
     msg = bot.send_message(chat_id=chat_id, text=text)
     bot.register_next_step_handler(msg, get_expense_cost, expense)
 
@@ -120,7 +120,7 @@ def get_expense_comment(message, expense):
 def get_expense_cost(message, expense):
     expense['comment'] = message.text
     chat_id = message.chat.id
-    text = 'Enter expense cost\n\n_Note: integer only_'
+    text = 'Введи стоимость\n\n_Важно!: только целое число_'
     msg = bot.send_message(chat_id=chat_id, text=text)
     bot.register_next_step_handler(msg, new_expense, expense)
 
