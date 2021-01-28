@@ -29,28 +29,6 @@ def start_message(message):
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
 
 
-@bot.message_handler(commands=['shownotes'])
-def get_notes(message):
-    markup_inline = types.InlineKeyboardMarkup()
-
-    notes = sql.get_notes_list()
-    if notes:
-        for callback_data in notes:
-            title = notes[callback_data]
-            msg = 'Notes list:'
-            markup_inline.add(types.InlineKeyboardButton(text=title, callback_data=f'show-content-{callback_data}'))
-    else:
-        msg = "_You have no notes_\. /newnote"
-
-    # markup_inline.add(types.InlineKeyboardButton(text='Back to /notes', callback_data='back_to_notes'))
-
-    bot.send_message(chat_id=message.chat.id,
-                     text=msg,
-                     reply_markup=markup_inline,
-                     parse_mode='MarkdownV2'
-                     )
-
-
 @bot.callback_query_handler(func=lambda call: True)
 def answer_to_call(call):
     print('Callback:', call.data)
@@ -102,8 +80,11 @@ def answer_to_call(call):
         markup_inline = ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
         markup_inline.add(key_today, key_yesterday)
         markup_inline.add(key_two_days_ago, key_three_days_ago)
-        text1 = 'Введи дату расхода.'
-        text2 = 'Пример: *2020-12-21*'
+
+        category_name, limit, available_balance = sql.get_limit(expense['category_id'])
+
+        text1 = f'*{category_name}*\nЛимит - {limit}\nДоступная сумма - {available_balance}'
+        text2 = 'Введи дату расхода.\nПример: *2020-12-21*'
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text1)
         msg = bot.send_message(chat_id=chat_id, text=text2, reply_markup=markup_inline)
         bot.register_next_step_handler(msg, get_expense_comment, expense)

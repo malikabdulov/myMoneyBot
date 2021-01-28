@@ -131,6 +131,31 @@ def get_expenses(limit=1000):
     finally:
         close_db_connection(cnx, cursor)
 
+
+def get_limit(category_id):
+    cnx = create_db_connection()
+    cursor = cnx.cursor()
+    try:
+        cursor.execute("SELECT name, credit_limit, credit_limit - "
+                       f"IFNULL((SELECT SUM(cost) FROM expenses WHERE category_id = {category_id} "
+                       "AND MONTH(created_at) = MONTH(CURRENT_DATE()) "
+                       "AND YEAR(created_at) = YEAR(CURRENT_DATE())), 0) "
+                       "FROM categories "
+                       f"WHERE id = {category_id} ")
+        result = cursor.fetchone()  # tuple()
+
+        category_name = result[0]
+        limit = result[1]
+        available_balance = result[2]
+
+        return category_name, limit, available_balance
+
+    except Error as e:
+        print(f"def get_expenses:::Error '{e}' occurred")
+        return None
+    finally:
+        close_db_connection(cnx, cursor)
+
 #     return
 #
 #
@@ -311,9 +336,10 @@ def get_expenses(limit=1000):
 
 
 if __name__ == '__main__':
-    res = get_expenses()
-    for r in res:
-        print(r[2])
+    category_name, limit, available_balance = get_limit(2)
+    print(category_name)
+    print(limit)
+    print(available_balance)
 
 
 
