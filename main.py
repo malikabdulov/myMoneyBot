@@ -46,7 +46,7 @@ def answer_to_call(call):
         for i in range(0, len(keys) - 1, 2):
             markup_inline.add(keys[i], keys[i + 1])
         if len(keys)%2!=0:
-            markup_inline.add(key[-1])
+            markup_inline.add(keys[-1])
         markup_inline.add(InlineKeyboardButton(text='Вернуться назад', callback_data='help'))
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
     elif callback == 'lastExpenses':
