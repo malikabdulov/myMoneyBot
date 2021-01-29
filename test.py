@@ -1,9 +1,7 @@
-import re
-import datetime
-from datetime import date, timedelta
+arr = [1, 2, 'hello']
 
-if __name__ == '__main__':
-    res = [(2, 1, 1, 'Phrease', datetime.datetime(2020, 12, 11, 0, 0), 874, datetime.datetime(2020, 12, 11, 20, 18, 6), datetime.datetime(2020, 12, 11, 20, 18, 6)),
-           (3, 1, 1, 'Ued', datetime.datetime(2020, 12, 11, 0, 0), 540, datetime.datetime(2020, 12, 11, 20, 24, 16), datetime.datetime(2020, 12, 11, 20, 24, 16))]
-    for r in res:
-        print(r[0])
+if len(arr)%2!=0:
+    print('hi')
+    print(arr[-1])
+else:
+    print('gg')
