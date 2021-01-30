@@ -24,9 +24,28 @@ def start_message(message):
     key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
     markup_inline = InlineKeyboardMarkup()
     markup_inline.add(key_new_expense, key_last_expenses)
-    text = f'You can use buttons bellow.'
+    text = f'Доступны команды:\n/start\n/help\n/available\n\nМожно написать:\nостаток\navailable'
     chat_id = message.chat.id
     bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
+
+
+@bot.message_handler(
+    func=lambda message: message.text.lower() == '/available' or
+                         message.text.lower() == 'available' or
+                         message.text.lower() == 'остаток')
+def hi_message(message):
+    chat_id = message.chat.id
+    pivot = sql.get_pivot()
+    text = ''
+    for line in pivot:  # tuple (name of category, limit, sum of costs, available limit)
+        name = line[0]
+        available = line[3]
+        if available > 0:
+            status = 'осталось'
+        else:
+            status = '*перелимит*'
+        text += f'{name} - {status} {available} тенге\n'
+    bot.send_message(chat_id=chat_id, text=text)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -45,7 +64,7 @@ def answer_to_call(call):
             keys.append(InlineKeyboardButton(text=f'{Name}', callback_data=f'newExpense{ID}'))
         for i in range(0, len(keys) - 1, 2):
             markup_inline.add(keys[i], keys[i + 1])
-        if len(keys)%2!=0:
+        if len(keys) % 2 != 0:
             markup_inline.add(keys[-1])
         markup_inline.add(InlineKeyboardButton(text='Вернуться назад', callback_data='help'))
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
@@ -54,7 +73,11 @@ def answer_to_call(call):
         expenses = sql.get_expenses(5)
         for expense in expenses:  # tuple (name, comment, date, cost)
             text += f'*{expense[2]}* _{expense[0]}_ - {expense[1]} - {expense[3]} тенге\n'
-        bot.send_message(chat_id=chat_id, text=text)
+        key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense', )
+        key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
+        markup_inline = InlineKeyboardMarkup()
+        markup_inline.add(key_new_expense, key_last_expenses)
+        bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
     elif callback == 'help':
         key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense', )
         key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
@@ -117,7 +140,6 @@ def new_expense(message, expense):
     chat_id = message.chat.id
     text = 'Спасибо, новый расход сохранен!'
     bot.send_message(chat_id=chat_id, text=text)
-
 
     # Old code
     # elif call.data == 'notes_list':

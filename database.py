@@ -157,190 +157,27 @@ def get_limit(category_id):
     finally:
         close_db_connection(cnx, cursor)
 
-#     return
-#
-#
-#
-#
-# def is_title_exists(note_title):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "SELECT title FROM notes WHERE title = %s"
-#
-#     try:
-#         cursor.execute(query, (note_title,))
-#         if cursor.fetchone():
-#             return True
-#         else:
-#             return False
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def insert_new_note(title):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "INSERT INTO notes (title) VALUES ( %s )"
-#     try:
-#         cursor.execute(query, (title,))
-#         return True
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def insert_new_content(content, callback):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "INSERT INTO note_contents (note_id, content) " \
-#             "VALUES (" \
-#             "(SELECT id FROM notes WHERE callback_data = %s), %s)"
-#     try:
-#         cursor.execute(query, (callback, content))
-#         print('[SQL] Statement: ', cursor.statement)
-#         return True
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def update_note_title(title, callback):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "UPDATE notes SET title = %s WHERE  callback_data = %s;"
-#     try:
-#         cursor.execute(query, (title, callback))
-#         return True
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def get_notes_list():
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "SELECT callback_data, title FROM notes"
-#     cursor.execute(query)
-#
-#     output = cursor.fetchall()
-#     output = dict(output)
-#
-#     close_db_connection(cnx, cursor)
-#
-#     # return dict={callback_data : title} or None
-#     return output
-#
-#
-# def get_note_title(callback_data):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "SELECT title FROM notes WHERE callback_data = %s"
-#     cursor.execute(query, (callback_data,))
-#     output = '%s' % cursor.fetchone()
-#
-#     close_db_connection(cnx, cursor)
-#     # Return str
-#     return output
-#
-#
-# def remove_note(callback):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "DELETE FROM notes WHERE callback_data = %s"
-#
-#     try:
-#         cursor.execute(query, (callback,))
-#         return True
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def is_callback_exists(callback):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "SELECT callback_data FROM notes WHERE callback_data = %s"
-#
-#     try:
-#         cursor.execute(query, (callback,))
-#         if cursor.fetchone():
-#             return True
-#         else:
-#             return False
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def get_contents_list(callback):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "SELECT nc.content_callback, nc.content " \
-#             "FROM notes n " \
-#             "JOIN note_contents nc ON n.id = nc.note_id " \
-#             "WHERE n.callback_data = %s"
-#
-#     try:
-#         cursor.execute(query, (callback,))
-#         output = cursor.fetchall()
-#         output = dict(output)
-#
-#         return output  # return dict={content_callback : content} or None
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
-#
-#
-# def get_content_callback(content_callback):
-#     cnx = create_db_connection()
-#     cursor = cnx.cursor()
-#
-#     query = "SELECT content_callback, content " \
-#             "FROM note_contents " \
-#             "WHERE content_callback = %s"
-#
-#     try:
-#         cursor.execute(query, (content_callback,))
-#         output = cursor.fetchall()
-#         output = dict(output)
-#
-#         return output  # return dict={content_callback : content} or None
-#     except Error as e:
-#         print(f"The error '{e}' occurred")
-#         return False
-#     finally:
-#         close_db_connection(cnx, cursor)
 
+def get_pivot():
+    cnx = create_db_connection()
+    cursor = cnx.cursor()
+    try:
+        cursor.execute("SELECT c.name, c.credit_limit, IFNULL(SUM(e.cost), 0), c.credit_limit - IFNULL(SUM(e.cost), 0) "
+                        "FROM categories c "
+                        "LEFT JOIN expenses e ON c.id = e.category_id "
+                        "GROUP BY c.id;")
+        result = cursor.fetchall()
+        return result  # list[(name of category, limit, sum of costs, available limit)]
+    except Error as e:
+        print(f"def get_expenses:::Error '{e}' occurred")
+        return None
+    finally:
+        close_db_connection(cnx, cursor)
 
 if __name__ == '__main__':
-    category_name, limit, available_balance = get_limit(2)
-    print(category_name)
-    print(limit)
-    print(available_balance)
+    r = get_pivot()
+    if r[0][3] > 0:
+        print('ttte')
 
 
 
