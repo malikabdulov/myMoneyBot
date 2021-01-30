@@ -109,8 +109,10 @@ def insert_new_expense(expense_data: dict):
     )
     try:
         cursor.execute(query, expense_data)
+        return True
     except Error as e:
         print(f"def insert_new_expense:::Error '{e}' occurred")
+        return False
     finally:
         close_db_connection(cnx, cursor)
 
