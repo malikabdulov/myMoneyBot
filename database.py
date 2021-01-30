@@ -122,6 +122,7 @@ def get_expenses(limit=1000):
         cursor.execute("SELECT c.name, e.comment, date(e.date), e.cost "
                        "FROM expenses e "
                        "JOIN categories c ON c.id = e.category_id "
+                       "ORDER BY e.id DESC "
                        f"LIMIT {limit}")
         result = cursor.fetchall()
         return result  # List[tuple()]
