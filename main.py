@@ -19,21 +19,23 @@ def start_message(message):
 
 
 @bot.message_handler(commands=['help'])
-def start_message(message):
+def help_message(message, callback=False):
     key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense')
     key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
+    key_limits = InlineKeyboardButton(text='Доступные суммы', callback_data='limits')
     markup_inline = InlineKeyboardMarkup()
     markup_inline.add(key_new_expense, key_last_expenses)
+    markup_inline.add(key_limits)
     text = f'Доступны команды:\n/start\n/help\n/available\n\nМожно написать:\nостаток\navailable'
     chat_id = message.chat.id
-    bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
+    if callback:
+        bot.edit_message_text(message_id=message.id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+    else:
+        bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
 
 
-@bot.message_handler(
-    func=lambda message: message.text.lower() == '/available' or
-                         message.text.lower() == 'available' or
-                         message.text.lower() == 'остаток')
-def hi_message(message):
+@bot.message_handler(func=lambda message: message.text.lower() in ['/available', 'available', 'остаток'])
+def limits_message(message, callback=False):
     chat_id = message.chat.id
     pivot = sql.get_pivot()
     text = ''
@@ -45,7 +47,49 @@ def hi_message(message):
         else:
             status = '*перелимит*'
         text += f'{name} - {status} {available} тенге\n'
-    bot.send_message(chat_id=chat_id, text=text)
+    if callback:
+        key_help = InlineKeyboardButton(text='Вернуться назад', callback_data='help')
+        markup_inline = InlineKeyboardMarkup()
+        markup_inline.add(key_help)
+        bot.edit_message_text(message_id=message.id, chat_id=message.chat.id, text=text, reply_markup=markup_inline)
+    else:
+        bot.send_message(chat_id=chat_id, text=text)
+
+
+@bot.message_handler(func=lambda message: message.text.lower() in ['/newexpense', 'новый расход'])
+def newExpense_message(message, callback=False):
+    text = 'Выбери категорию:'
+    chat_id = message.chat.id
+    categories = sql.get_categories()
+    markup_inline = InlineKeyboardMarkup()
+    keys = []
+    for ID, Name in categories.items():
+        keys.append(InlineKeyboardButton(text=f'{Name}', callback_data=f'newExpense{ID}'))
+    for i in range(0, len(keys) - 1, 2):
+        markup_inline.add(keys[i], keys[i + 1])
+    if len(keys) % 2 != 0:
+        markup_inline.add(keys[-1])
+    markup_inline.add(InlineKeyboardButton(text='Вернуться назад', callback_data='help'))
+    if callback:
+        bot.edit_message_text(message_id=message.id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+    else:
+        bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
+
+
+@bot.message_handler(func=lambda message: message.text.lower() in ['/lastexpenses', 'последние расходы'])
+def lastExpenses_message(message, callback=False):
+    text = ''
+    expenses = sql.get_expenses(5)
+    chat_id = message.chat.id
+    for expense in expenses:  # tuple (name, comment, date, cost)
+        text += f'*{expense[2]}* _{expense[0]}_ - {expense[1]} - {expense[3]} тенге\n'
+    if callback:
+        key_help = InlineKeyboardButton(text='Вернуться назад', callback_data='help')
+        markup_inline = InlineKeyboardMarkup()
+        markup_inline.add(key_help)
+        bot.edit_message_text(message_id=message.id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+    else:
+        bot.send_message(chat_id=chat_id, text=text)
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -56,36 +100,13 @@ def answer_to_call(call):
     msg_id = call.message.id
     src_text = call.message.text
     if callback == 'newExpense':
-        text = 'Выбери категорию:'
-        categories = sql.get_categories()
-        markup_inline = InlineKeyboardMarkup()
-        keys = []
-        for ID, Name in categories.items():
-            keys.append(InlineKeyboardButton(text=f'{Name}', callback_data=f'newExpense{ID}'))
-        for i in range(0, len(keys) - 1, 2):
-            markup_inline.add(keys[i], keys[i + 1])
-        if len(keys) % 2 != 0:
-            markup_inline.add(keys[-1])
-        markup_inline.add(InlineKeyboardButton(text='Вернуться назад', callback_data='help'))
-        bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+        newExpense_message(call.message, True)
+    elif callback == 'limits':
+        limits_message(call.message, True)
     elif callback == 'lastExpenses':
-        text = ''
-        expenses = sql.get_expenses(5)
-        for expense in expenses:  # tuple (name, comment, date, cost)
-            text += f'*{expense[2]}* _{expense[0]}_ - {expense[1]} - {expense[3]} тенге\n'
-        key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense', )
-        key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
-        markup_inline = InlineKeyboardMarkup()
-        markup_inline.add(key_new_expense, key_last_expenses)
-        bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+        lastExpenses_message(call.message, True)
     elif callback == 'help':
-        key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense', )
-        key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
-        markup_inline = InlineKeyboardMarkup()
-        markup_inline.add(key_new_expense, key_last_expenses)
-
-        text = f'You can use buttons bellow.'
-        bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+        help_message(call.message, True)
     elif re.match(pattern='newExpense\d+', string=callback):
         category_id = re.findall(pattern='\d+', string=callback)
         telegram_id = call.from_user.id
