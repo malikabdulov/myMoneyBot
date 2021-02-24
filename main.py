@@ -162,7 +162,10 @@ def new_expense(message, expense):
             text = 'Новый расход успешно сохранен!'
         else:
             text = 'Новый расход *не сохранен*, зови Малика!'
-        bot.send_message(chat_id=chat_id, text=text)
+        key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense')
+        markup_inline = InlineKeyboardMarkup()
+        markup_inline.add(key_new_expense)
+        bot.send_message(chat_id=chat_id, text=text, reply_markup=markup_inline)
     else:
         text = 'Нужно целое число. Введи еще раз.'
         msg = bot.send_message(chat_id=chat_id, text=text)
