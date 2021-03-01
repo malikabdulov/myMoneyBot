@@ -167,6 +167,8 @@ def get_pivot():
         cursor.execute("SELECT c.name, c.credit_limit, IFNULL(SUM(e.cost), 0), c.credit_limit - IFNULL(SUM(e.cost), 0) "
                         "FROM categories c "
                         "LEFT JOIN expenses e ON c.id = e.category_id "
+                        "WHERE MONTH(date) = MONTH(CURRENT_DATE()) "
+                        "AND YEAR(date) = YEAR(CURRENT_DATE()) "
                         "GROUP BY c.id;")
         result = cursor.fetchall()
         return result  # list[(name of category, limit, sum of costs, available limit)]
