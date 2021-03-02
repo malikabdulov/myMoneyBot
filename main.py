@@ -3,8 +3,8 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 import database as sql
 import config
 import re
-import functions_tg as tfunc
 from datetime import date, timedelta
+import db_backup
 
 bot = telebot.TeleBot(token=config.potatobot['token'], parse_mode='Markdown')
 
