@@ -4,7 +4,6 @@ import database as sql
 import config
 import re
 from datetime import date, timedelta
-# import db_backup
 
 bot = telebot.TeleBot(token=config.potatobot['token'], parse_mode='Markdown')
 

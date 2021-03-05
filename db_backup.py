@@ -20,7 +20,7 @@ def backup_database():
     print("Your backups have been created in '" + BACKUP_PATH + "' directory")
 
 
-schedule.every().friday.at("12:00").do(backup_database)
+schedule.every().friday.at("22:32").do(backup_database)
 while True:
     schedule.run_pending()
     time.sleep(50)
