@@ -9,8 +9,8 @@ def backup_database():
     DB_USER = config.database['user']
     DB_USER_PASSWORD = config.database['password']
     DB_NAME = config.database['database']
-    BACKUP_PATH = config.database['backup_path']
-    MYSQL_PATH = config.database['mysql_path']
+    BACKUP_PATH = config.backup['backup_path']
+    MYSQL_PATH = config.backup['mysql_path']
 
     DATETIME = time.strftime('%Y%m%d-%H%M%S')
 
