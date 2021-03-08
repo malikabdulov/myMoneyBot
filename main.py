@@ -129,7 +129,7 @@ def answer_to_call(call):
         category_name, limit, available_balance = sql.get_limit(expense['category_id'])
 
         text1 = f'*{category_name}*\nЛимит - {limit}\nДоступная сумма - {available_balance}'
-        text2 = 'Введи дату расхода.\nПример: *2020-12-21*'
+        text2 = 'Введи дату расхода.\nПример: *2021-03-23*'
         bot.edit_message_text(message_id=msg_id, chat_id=chat_id, text=text1)
         msg = bot.send_message(chat_id=chat_id, text=text2, reply_markup=markup_inline)
         bot.register_next_step_handler(msg, get_expense_comment, expense)
