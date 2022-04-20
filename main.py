@@ -25,7 +25,7 @@ def help_message(message, callback=False):
     markup_inline = InlineKeyboardMarkup()
     markup_inline.add(key_new_expense, key_last_expenses)
     markup_inline.add(key_limits)
-    text = f'Доступны команды:\n/start\n/help\n/available\n\nМожно написать:\nостаток\navailable'
+    text = f'Heroku Доступны команды:\n/start\n/help\n/available\n\nМожно написать:\nостаток\navailable'
     chat_id = message.chat.id
     if callback:
         bot.edit_message_text(message_id=message.id, chat_id=chat_id, text=text, reply_markup=markup_inline)
