@@ -1,3 +1,4 @@
+import os
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 import database as sql
@@ -173,6 +174,7 @@ def new_expense(message, expense):
 
 if __name__ == '__main__':
     print('Bot is running')
+    print(os.environ)
     try:
         bot.polling(none_stop=True, interval=0)
     except Exception as e:
