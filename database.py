@@ -162,12 +162,12 @@ def get_pivot():
     cnx = create_db_connection()
     cursor = cnx.cursor()
     try:
-        cursor.execute("SELECT c.name, c.credit_limit, IFNULL(SUM(e.amount), 0), c.credit_limit - IFNULL(SUM(e.amount), 0) "
+        cursor.execute("SELECT c.name, c.credit_limit, coalesce(SUM(e.amount), 0), c.credit_limit - coalesce(SUM(e.amount), 0) "
                         "FROM money_bot.categories c "
                         "LEFT JOIN ( "
                         "SELECT amount, category_id FROM money_bot.expenses "
-                        "WHERE MONTH(date) = MONTH(CURRENT_DATE()) "
-                        "AND YEAR(date) = YEAR(CURRENT_DATE()) "
+                        "WHERE extract(month from date) = extract(month from current_timestamp) "
+                        "AND extract(year from date) = extract(year from current_timestamp) "
                         ") e ON c.id = e.category_id "                        
                         "GROUP BY c.id;")
         result = cursor.fetchall()
