@@ -1,30 +1,27 @@
-from builtins import type
-import config
-import mysql.connector
-from mysql.connector import Error
+import configurations as config
+
+import psycopg2
 
 
 def create_db_connection():
-    connection = mysql.connector.connect(**config.database)
-
     try:
-        connection = mysql.connector.connect(**config.database)
-    except Error as e:
+        connection = psycopg2.connect(**config.database_credentials)
+        connection.autocommit = True
+        return connection
+    except Exception as e:
         print(f"The error '{e}' occurred")
-
-    return connection
 
 
 def close_db_connection(cnx, cursor=None):
     if cursor:
         try:
             cursor.close()
-        except Error as e:
+        except Exception as e:
             print(f"The error '{e}' occurred")
 
     try:
         cnx.close()
-    except Error as e:
+    except Exception as e:
         print(f"The error '{e}' occurred")
 
 
@@ -36,11 +33,11 @@ def get_author_id(telegram_id):
     cnx = create_db_connection()
     cursor = cnx.cursor()
     try:
-        cursor.execute("SELECT id FROM users WHERE telegram_id = %s", (telegram_id,))
+        cursor.execute("SELECT id FROM money_bot.users WHERE telegram_id = %s", (telegram_id,))
         result = cursor.fetchone()
         return result
-    except Error as e:
-        print(f"def username_is_exist:::Error '{e}' occurred")
+    except Exception as e:
+        print(f"def get_author_id:::Error '{e}' occurred")
         return None
     finally:
         close_db_connection(cnx, cursor)
@@ -59,13 +56,13 @@ def update_users(message):
 
     if not exist:
         query = (
-            "INSERT INTO users"
+            "INSERT INTO money_bot.users"
             "         (telegram_id,     telegram_username,     first_name,     last_name)"
             "VALUES (%(telegram_id)s, %(telegram_username)s, %(first_name)s, %(last_name)s)"
         )
     else:
         query = (
-            "UPDATE users SET "
+            "UPDATE money_bot.users SET "
             "telegram_username = %(telegram_username)s,"
             "first_name = %(first_name)s,"
             "last_name = %(last_name)s"
@@ -73,7 +70,7 @@ def update_users(message):
         )
     try:
         cursor.execute(query, user_data)
-    except Error as e:
+    except Exception as e:
         print(cursor.statement())
         print(f"def update_users:::Error '{e}' occurred")
     finally:
@@ -84,12 +81,12 @@ def update_users(message):
 def get_categories():
     cnx = create_db_connection()
     cursor = cnx.cursor()
-    query = 'SELECT id, name FROM categories ORDER by id'
+    query = 'SELECT id, name FROM money_bot.categories ORDER by id'
     try:
         cursor.execute(query)
         output = cursor.fetchall()
         return dict(output)
-    except Error as e:
+    except Exception as e:
         print(f"def get_categories:::Error '{e}' occurred")
         return False
     finally:
@@ -103,14 +100,14 @@ def insert_new_expense(expense_data: dict):
     author_id = get_author_id(expense_data['telegram_id'])[0]
     expense_data['author_id'] = author_id
     query = (
-        "INSERT INTO expenses "
-        "         (category_id, author_id, comment, date, cost) "
-        "VALUES (%(category_id)s, %(author_id)s, %(comment)s, %(date)s, %(cost)s )"
+        "INSERT INTO money_bot.expenses "
+        "         (category_id, author_id, comment, date, amount) "
+        "VALUES (%(category_id)s, %(author_id)s, %(comment)s, %(date)s, %(amount)s )"
     )
     try:
         cursor.execute(query, expense_data)
         return True
-    except Error as e:
+    except Exception as e:
         print(f"def insert_new_expense:::Error '{e}' occurred")
         return False
     finally:
@@ -121,14 +118,14 @@ def get_expenses(limit=1000):
     cnx = create_db_connection()
     cursor = cnx.cursor()
     try:
-        cursor.execute("SELECT c.name, e.comment, date(e.date), e.cost "
-                       "FROM expenses e "
-                       "JOIN categories c ON c.id = e.category_id "
+        cursor.execute("SELECT c.name, e.comment, date(e.date), e.amount "
+                       "FROM money_bot.expenses e "
+                       "JOIN money_bot.categories c ON c.id = e.category_id "
                        "ORDER BY e.id DESC "
                        f"LIMIT {limit}")
         result = cursor.fetchall()
         return result  # List[tuple()]
-    except Error as e:
+    except Exception as e:
         print(f"def get_expenses:::Error '{e}' occurred")
         return None
     finally:
@@ -140,10 +137,10 @@ def get_limit(category_id):
     cursor = cnx.cursor()
     try:
         cursor.execute("SELECT name, credit_limit, credit_limit - "
-                       f"IFNULL((SELECT SUM(cost) FROM expenses WHERE category_id = {category_id} "
-                       "AND MONTH(created_at) = MONTH(CURRENT_DATE()) "
-                       "AND YEAR(created_at) = YEAR(CURRENT_DATE())), 0) "
-                       "FROM categories "
+                       f"coalesce((SELECT SUM(amount) FROM money_bot.expenses WHERE category_id = {category_id} "
+                       "AND extract(month from created_at) = extract(month from current_timestamp) "
+                       "AND extract(year from created_at) = extract(year from current_timestamp)), 0) "
+                       "FROM money_bot.categories "
                        f"WHERE id = {category_id} ")
         result = cursor.fetchone()  # tuple()
 
@@ -153,8 +150,9 @@ def get_limit(category_id):
 
         return category_name, limit, available_balance
 
-    except Error as e:
-        print(f"def get_expenses:::Error '{e}' occurred")
+
+    except Exception as e:
+        print(f"def get_limit:::Error '{e}' occurred")
         return None
     finally:
         close_db_connection(cnx, cursor)
@@ -164,26 +162,25 @@ def get_pivot():
     cnx = create_db_connection()
     cursor = cnx.cursor()
     try:
-        cursor.execute("SELECT c.name, c.credit_limit, IFNULL(SUM(e.cost), 0), c.credit_limit - IFNULL(SUM(e.cost), 0) "
-                        "FROM categories c "
+        cursor.execute("SELECT c.name, c.credit_limit, IFNULL(SUM(e.amount), 0), c.credit_limit - IFNULL(SUM(e.amount), 0) "
+                        "FROM money_bot.categories c "
                         "LEFT JOIN ( "
-                        "SELECT cost, category_id FROM expenses "
+                        "SELECT amount, category_id FROM money_bot.expenses "
                         "WHERE MONTH(date) = MONTH(CURRENT_DATE()) "
                         "AND YEAR(date) = YEAR(CURRENT_DATE()) "
                         ") e ON c.id = e.category_id "                        
                         "GROUP BY c.id;")
         result = cursor.fetchall()
-        return result  # list[(name of category, limit, sum of costs, available limit)]
-    except Error as e:
+        return result  # list[(name of category, limit, sum of amount, available limit)]
+    except Exception as e:
         print(f"def get_pivot:::Error '{e}' occurred")
         return None
     finally:
         close_db_connection(cnx, cursor)
 
+
 if __name__ == '__main__':
-    r = get_pivot()
-    if r[0][3] > 0:
-        print('ttte')
+    print(create_db_connection())
 
 
 

@@ -1,14 +1,14 @@
 import os
 import time
 import schedule
-import config
+import configurations as config
 
 
 def backup_database():
-    DB_HOST = config.database['host']
-    DB_USER = config.database['user']
-    DB_USER_PASSWORD = config.database['password']
-    DB_NAME = config.database['database']
+    DB_HOST = config.database_credentials['host']
+    DB_USER = config.database_credentials['user']
+    DB_USER_PASSWORD = config.database_credentials['password']
+    DB_NAME = config.database_credentials['database']
     BACKUP_PATH = config.backup['backup_path']
     MYSQL_PATH = config.backup['mysql_path']
 

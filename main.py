@@ -1,11 +1,11 @@
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 import database as sql
-import config
+import configurations as config
 import re
 from datetime import date, timedelta
 
-bot = telebot.TeleBot(token=config.potatobot['token'], parse_mode='Markdown')
+bot = telebot.TeleBot(token=config.potato_bot['token'], parse_mode='Markdown')
 
 
 @bot.message_handler(commands=['start'])
@@ -38,7 +38,7 @@ def limits_message(message, callback=False):
     chat_id = message.chat.id
     pivot = sql.get_pivot()
     text = ''
-    for line in pivot:  # tuple (name of category, limit, sum of costs, available limit)
+    for line in pivot:  # tuple (name of category, limit, sum of amount, available limit)
         name = line[0]
         available = line[3]
         if available > 0:
@@ -80,7 +80,7 @@ def lastExpenses_message(message, callback=False):
     text = ''
     expenses = sql.get_expenses(5)
     chat_id = message.chat.id
-    for expense in expenses:  # tuple (name, comment, date, cost)
+    for expense in expenses:  # tuple (name, comment, date, amount)
         text += f'*{expense[2]}* _{expense[0]}_ - {expense[1]} - {expense[3]} тенге\n'
     if callback:
         key_help = InlineKeyboardButton(text='Вернуться назад', callback_data='help')
@@ -140,10 +140,10 @@ def get_expense_comment(message, expense):
     chat_id = message.chat.id
     text = 'Введи комментарий к расходу'
     msg = bot.send_message(chat_id=chat_id, text=text, reply_markup=ReplyKeyboardRemove())
-    bot.register_next_step_handler(msg, get_expense_cost, expense)
+    bot.register_next_step_handler(msg, get_expense_amount, expense)
 
 
-def get_expense_cost(message, expense):
+def get_expense_amount(message, expense):
     expense['comment'] = message.text
     chat_id = message.chat.id
     text = 'Введи стоимость\n\n_Важно!: только целое число_'
@@ -155,7 +155,7 @@ def new_expense(message, expense):
     chat_id = message.chat.id
     input = message.text
     if input.isdigit():
-        expense['cost'] = int(input)
+        expense['amount'] = int(input)
         result = sql.insert_new_expense(expense)
         if result:
             text = 'Новый расход успешно сохранен!'
