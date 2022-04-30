@@ -132,6 +132,26 @@ def get_expenses(limit=1000):
         close_db_connection(cnx, cursor)
 
 
+def get_expenses_by_month():
+    cnx = create_db_connection()
+    cursor = cnx.cursor()
+    query = "select c.name, sum(e.amount) " \
+            "from money_bot.expenses e " \
+            "join money_bot.categories c on e.category_id = c.id " \
+            "where extract(month from e.date) = extract(month from current_timestamp) " \
+            "and extract(year from e.date) = extract(year from current_timestamp) " \
+            "group by c.name"
+    try:
+        cursor.execute(query)
+        output = cursor.fetchall()
+        return dict(output)
+    except Exception as e:
+        print(f"def get_categories:::Error '{e}' occurred")
+        return False
+    finally:
+        close_db_connection(cnx, cursor)
+
+
 def get_limit(category_id):
     cnx = create_db_connection()
     cursor = cnx.cursor()

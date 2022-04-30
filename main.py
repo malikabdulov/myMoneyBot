@@ -22,9 +22,11 @@ def help_message(message, callback=False):
     key_new_expense = InlineKeyboardButton(text='Новый расход', callback_data='newExpense')
     key_last_expenses = InlineKeyboardButton(text='Последние 5 расходов', callback_data='lastExpenses')
     key_limits = InlineKeyboardButton(text='Доступные суммы', callback_data='limits')
+    key_total_expenses = InlineKeyboardButton(text='Всего расходов', callback_data='totalExpenses')
     markup_inline = InlineKeyboardMarkup()
     markup_inline.add(key_new_expense, key_last_expenses)
     markup_inline.add(key_limits)
+    markup_inline.add(key_total_expenses)
     text = f'Heroku Доступны команды:\n/start\n/help\n/available\n\nМожно написать:\nостаток\navailable'
     chat_id = message.chat.id
     if callback:
@@ -91,6 +93,26 @@ def lastExpenses_message(message, callback=False):
         bot.send_message(chat_id=chat_id, text=text)
 
 
+@bot.message_handler(func=lambda message: message.text.lower() in ['/totalexpenses', 'всего расходов'])
+def totalExpenses_message(message, callback=False):
+    text = ''
+    expenses = sql.get_expenses_by_month()
+    chat_id = message.chat.id
+    if expenses:
+        for category, total in expenses.items():
+            text += f'{category}: {total} тенге\n'
+        text += f'*Всего: {sum(expenses.values())} тенге*'
+    else:
+        text = 'Расходов за этот месяц нет'
+    if callback:
+        key_help = InlineKeyboardButton(text='Вернуться назад', callback_data='help')
+        markup_inline = InlineKeyboardMarkup()
+        markup_inline.add(key_help)
+        bot.edit_message_text(message_id=message.id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+    else:
+        bot.send_message(chat_id=chat_id, text=text)
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def answer_to_call(call):
     print('Callback:', call.data)
@@ -104,6 +126,8 @@ def answer_to_call(call):
         limits_message(call.message, True)
     elif callback == 'lastExpenses':
         lastExpenses_message(call.message, True)
+    elif callback == 'totalExpenses':
+        totalExpenses_message(call.message, True)
     elif callback == 'help':
         help_message(call.message, True)
     elif re.match(pattern='newExpense\d+', string=callback):
