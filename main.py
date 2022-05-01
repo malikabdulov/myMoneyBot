@@ -4,6 +4,7 @@ import database as sql
 import configurations as config
 import re
 from datetime import date, timedelta
+from tabulate import tabulate
 
 bot = telebot.TeleBot(token=config.potato_bot['token'], parse_mode='Markdown')
 
@@ -95,20 +96,28 @@ def lastExpenses_message(message, callback=False):
 
 @bot.message_handler(func=lambda message: message.text.lower() in ['/totalexpenses', 'всего расходов'])
 def totalExpenses_message(message, callback=False):
-    text = ''
     expenses = sql.get_expenses_by_month()
     chat_id = message.chat.id
     if expenses:
-        for category, total in expenses.items():
-            text += f'{category}: {total} тенге\n'
-        text += f'*Всего: {sum(expenses.values())} тенге*'
+        categories = list(expenses.keys())
+        categories.append('Всего расходов')
+        total_sums = list(expenses.values())
+        total_sums.append(sum(total_sums))
+        info = {'Categories': categories, 'Total': total_sums}
+        text = '```\n'
+        text += tabulate(info, tablefmt='grid')
+        text += '```'
+        print(text)
     else:
         text = 'Расходов за этот месяц нет'
     if callback:
         key_help = InlineKeyboardButton(text='Вернуться назад', callback_data='help')
         markup_inline = InlineKeyboardMarkup()
         markup_inline.add(key_help)
-        bot.edit_message_text(message_id=message.id, chat_id=chat_id, text=text, reply_markup=markup_inline)
+        bot.edit_message_text(message_id=message.id,
+                              chat_id=chat_id,
+                              text=text,
+                              reply_markup=markup_inline)
     else:
         bot.send_message(chat_id=chat_id, text=text)
 
