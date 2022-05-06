@@ -56,17 +56,17 @@ def update_users(message):
 
     if not exist:
         query = (
-            "INSERT INTO money_bot.users"
-            "         (telegram_id,     telegram_username,     first_name,     last_name)"
-            "VALUES (%(telegram_id)s, %(telegram_username)s, %(first_name)s, %(last_name)s)"
+            "INSERT INTO money_bot.users "
+            "         (telegram_id,     telegram_username,     first_name,     last_name) "
+            "VALUES (%(telegram_id)s, %(telegram_username)s, %(first_name)s, %(last_name)s) "
         )
     else:
         query = (
             "UPDATE money_bot.users SET "
             "telegram_username = %(telegram_username)s,"
-            "first_name = %(first_name)s,"
-            "last_name = %(last_name)s"
-            "WHERE telegram_id = %(telegram_id)s"
+            "first_name = %(first_name)s, "
+            "last_name = %(last_name)s "
+            "WHERE telegram_id = %(telegram_id)s "
         )
     try:
         cursor.execute(query, user_data)
