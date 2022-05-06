@@ -71,8 +71,8 @@ def update_users(message):
     try:
         cursor.execute(query, user_data)
     except Exception as e:
-        print(cursor.statement())
         print(f"def update_users:::Error '{e}' occurred")
+        print('query', cursor.query)
     finally:
         close_db_connection(cnx, cursor)
     return
